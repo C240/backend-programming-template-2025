@@ -3,9 +3,25 @@ const { errorResponder, errorTypes } = require('../../../core/errors');
 
 async function getBooks(request, response, next) {
   try {
-    const books = await booksService.getBooks();
+    const offset = parseInt(request.query.offset, 10) || 0;
+    const limit = parseInt(request.query.limit, 10) || 10;
 
-    return response.status(200).json(books);
+    if (offset < 0) {
+      throw errorResponder(
+        errorTypes.VALIDATION_ERROR,
+        'Offset must be a non-negative number'
+      );
+    }
+
+    if (limit < 1) {
+      throw errorResponder(
+        errorTypes.VALIDATION_ERROR,
+        'Limit must be a positive number'
+      );
+    }
+
+    const result = await booksService.getBooks(offset, limit);
+    return response.status(200).json(result);
   } catch (error) {
     return next(error);
   }

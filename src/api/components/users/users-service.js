@@ -1,7 +1,7 @@
 const usersRepository = require('./users-repository');
 
-async function getUsers() {
-  return usersRepository.getUsers();
+async function getUsers(offset, limit) {
+  return usersRepository.getUsers(offset, limit);
 }
 
 async function getUser(id) {
@@ -10,7 +10,7 @@ async function getUser(id) {
 
 async function emailExists(email) {
   const user = await usersRepository.getUserByEmail(email);
-  return !!user; // Return true if user exists, false otherwise
+  return !!user;
 }
 
 async function createUser(email, password, fullName) {

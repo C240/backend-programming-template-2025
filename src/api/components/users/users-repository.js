@@ -1,7 +1,15 @@
 const { Users } = require('../../../models');
 
-async function getUsers() {
-  return Users.find({});
+async function getUsers(offset = 0, limit = 10) {
+  const total = await Users.countDocuments({});
+  const users = await Users.find({}).skip(offset).limit(limit);
+
+  return {
+    total,
+    users,
+    offset,
+    limit,
+  };
 }
 
 async function getUser(id) {

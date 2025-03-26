@@ -5,22 +5,57 @@ const mongoose = require('mongoose');
 const config = require('../core/config');
 const logger = require('../core/logger')('app');
 
-// Join the database connection string
-const connectionString = new URL(config.database.connection);
-connectionString.pathname += config.database.name;
+const connect = async () => {
+  try {
+    const connectionString = config.database.connection;
+    const dbName = config.database.name;
 
-mongoose.connect(`${connectionString.toString()}`);
+    // Log connection attempt
+    logger.info(`Attempting to connect to MongoDB with database: ${dbName}`);
 
-const db = mongoose.connection;
-db.once('open', () => {
-  logger.info('Successfully connected to MongoDB');
+    await mongoose.connect(connectionString, {
+      dbName,
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+    });
+
+    logger.info('Successfully connected to MongoDB');
+  } catch (error) {
+    logger.error({
+      msg: 'Error connecting to MongoDB',
+      error: error.message,
+      code: error.code,
+      name: error.name,
+    });
+    process.exit(1);
+  }
+};
+
+// Handle connection events
+mongoose.connection.on('error', (error) => {
+  logger.error({
+    msg: 'MongoDB connection error',
+    error: error.message,
+    code: error.code,
+    name: error.name,
+  });
 });
 
-const dbExports = {};
-dbExports.db = db;
+mongoose.connection.on('disconnected', () => {
+  logger.warn('MongoDB disconnected');
+});
 
+mongoose.connection.on('reconnected', () => {
+  logger.info('MongoDB reconnected');
+});
+
+// Connect to MongoDB
+connect();
+
+const db = mongoose.connection;
+const dbExports = { db };
+
+// Load models
 const basename = path.basename(__filename);
-
 fs.readdirSync(__dirname)
   .filter(
     (file) =>
